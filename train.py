@@ -4,6 +4,7 @@ import time
 import random
 import string
 import argparse
+import wandb
 
 import torch
 import torch.backends.cudnn as cudnn
@@ -20,6 +21,10 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 def train(opt):
+    """ wandb preparation"""
+    wandb.init(project=opt.wandb_project_name)
+
+
     """ dataset preparation """
     if not opt.data_filtering_off:
         print('Filtering the images containing characters which are not in opt.character')
@@ -214,6 +219,7 @@ def train(opt):
                 predicted_result_log += f'{dashed_line}'
                 print(predicted_result_log)
                 log.write(predicted_result_log + '\n')
+                wandb.log({'train_loss': loss_avg.val(), 'valid_loss': valid_loss, 'preds': preds, 'labels': labels, 'confidence': confidence_score})
 
         # save model per 1e+5 iter.
         if (iteration + 1) % 1e+5 == 0:
@@ -257,7 +263,7 @@ if __name__ == '__main__':
     parser.add_argument('--imgW', type=int, default=100, help='the width of the input image')
     parser.add_argument('--rgb', action='store_true', help='use rgb input')
     parser.add_argument('--character', type=str,
-                        default='0123456789abcdefghijklmnopqrstuvwxyz', help='character label')
+                        default=' !"#$%&\'()*+,-./0123456789:;<=>?@[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~', help='character label')
     parser.add_argument('--sensitive', action='store_true', help='for sensitive character mode')
     parser.add_argument('--PAD', action='store_true', help='whether to keep ratio then pad for image resize')
     parser.add_argument('--data_filtering_off', action='store_true', help='for data_filtering_off mode')
@@ -273,6 +279,7 @@ if __name__ == '__main__':
     parser.add_argument('--output_channel', type=int, default=512,
                         help='the number of output channel of Feature extractor')
     parser.add_argument('--hidden_size', type=int, default=256, help='the size of the LSTM hidden state')
+    parser.add_argument('--wandb_project_name', type=str, default='deep_text_recognition_benchmark', help='wandb api key')
 
     opt = parser.parse_args()
 
