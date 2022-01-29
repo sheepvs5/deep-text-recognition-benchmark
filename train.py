@@ -189,7 +189,6 @@ def train(opt):
 
                 # training loss and validation loss
                 loss_log = f'[{iteration+1}/{opt.num_iter}] Train loss: {loss_avg.val():0.5f}, Valid loss: {valid_loss:0.5f}, Elapsed_time: {elapsed_time:0.5f}'
-                loss_avg.reset()
 
                 current_model_log = f'{"Current_accuracy":17s}: {current_accuracy:0.3f}, {"Current_norm_ED":17s}: {current_norm_ED:0.2f}'
 
@@ -219,12 +218,14 @@ def train(opt):
                 predicted_result_log += f'{dashed_line}'
                 print(predicted_result_log)
                 log.write(predicted_result_log + '\n')
-                wandb.log({'train_loss': loss_avg.val(), 'valid_loss': valid_loss, 'preds': preds, 'labels': labels, 'confidence': confidence_score})
+                wandb.log({'train_loss': loss_avg.val(), 'valid_loss': valid_loss, 'True_ratio': np.sum(np.array(preds)==np.array(labels))/len(labels)})
+                loss_avg.reset()
 
         # save model per 1e+5 iter.
         if (iteration + 1) % 1e+5 == 0:
-            torch.save(
-                model.state_dict(), f'./saved_models/{opt.exp_name}/iter_{iteration+1}.pth')
+            torch.save(model.state_dict(), f'./saved_models/{opt.exp_name}/iter_{iteration+1}.pth')
+            wandb.log_artifact(file_path=f'./saved_models/{opt.exp_name}/iter_{iteration+1}.pth', 
+                                name='iter_{}_model'.format(iteration+1), type='model')
 
         if (iteration + 1) == opt.num_iter:
             print('end the training')
