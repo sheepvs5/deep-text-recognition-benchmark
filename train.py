@@ -221,8 +221,7 @@ def train(opt):
                 wandb.log({'train_loss': loss_avg.val(), 'valid_loss': valid_loss, 'True_ratio': np.sum(np.array(preds)==np.array(labels))/len(labels)})
                 loss_avg.reset()
 
-        # save model per 1e+5 iter.
-        if (iteration + 1) % 1e+5 == 0:
+        # save model
             torch.save(model.state_dict(), f'./saved_models/{opt.exp_name}/iter_{iteration+1}.pth')
             wandb.log_artifact(file_path=f'./saved_models/{opt.exp_name}/iter_{iteration+1}.pth', 
                                 name='iter_{}_model'.format(iteration+1), type='model')
