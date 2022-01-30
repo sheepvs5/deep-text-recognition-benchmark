@@ -5,12 +5,13 @@ import torch.nn.functional as F
 class VGG_FeatureExtractor(nn.Module):
     """ FeatureExtractor of CRNN (https://arxiv.org/pdf/1507.05717.pdf) """
 
-    def __init__(self, input_channel, output_channel=512):
+    def __init__(self, input_channel, output_channel=512, **kwargs):
         super(VGG_FeatureExtractor, self).__init__()
         self.output_channel = [int(output_channel / 8), int(output_channel / 4),
                                int(output_channel / 2), output_channel]  # [64, 128, 256, 512]
-        self.ConvNet = nn.Sequential(
-            nn.Conv2d(input_channel, self.output_channel[0], 3, 1, 1), nn.ReLU(True),
+
+        last_kernel = int(kwargs.get('opt', None).imgH/16) if kwargs.get('opt', None) else 2
+        self.ConvNet = nn.Sequential(nn.Conv2d(input_channel, self.output_channel[0], 3, 1, 1), nn.ReLU(True),
             nn.MaxPool2d(2, 2),  # 64x16x50
             nn.Conv2d(self.output_channel[0], self.output_channel[1], 3, 1, 1), nn.ReLU(True),
             nn.MaxPool2d(2, 2),  # 128x8x25
@@ -22,7 +23,7 @@ class VGG_FeatureExtractor(nn.Module):
             nn.Conv2d(self.output_channel[3], self.output_channel[3], 3, 1, 1, bias=False),
             nn.BatchNorm2d(self.output_channel[3]), nn.ReLU(True),
             nn.MaxPool2d((2, 1), (2, 1)),  # 512x2x25
-            nn.Conv2d(self.output_channel[3], self.output_channel[3], 2, 1, 0), nn.ReLU(True))  # 512x1x24
+            nn.Conv2d(self.output_channel[3], self.output_channel[3], last_kernel, last_kernel, 0), nn.ReLU(True)) 
 
     def forward(self, input):
         return self.ConvNet(input)
@@ -31,12 +32,13 @@ class VGG_FeatureExtractor(nn.Module):
 class RCNN_FeatureExtractor(nn.Module):
     """ FeatureExtractor of GRCNN (https://papers.nips.cc/paper/6637-gated-recurrent-convolution-neural-network-for-ocr.pdf) """
 
-    def __init__(self, input_channel, output_channel=512):
+    def __init__(self, input_channel, output_channel=512, **kwargs):
         super(RCNN_FeatureExtractor, self).__init__()
         self.output_channel = [int(output_channel / 8), int(output_channel / 4),
                                int(output_channel / 2), output_channel]  # [64, 128, 256, 512]
-        self.ConvNet = nn.Sequential(
-            nn.Conv2d(input_channel, self.output_channel[0], 3, 1, 1), nn.ReLU(True),
+
+        last_kernel = int(kwargs.get('opt', None).imgH/16) if kwargs.get('opt', None) else 2
+        self.ConvNet = nn.Sequential(nn.Conv2d(input_channel, self.output_channel[0], 3, 1, 1), nn.ReLU(True),
             nn.MaxPool2d(2, 2),  # 64 x 16 x 50
             GRCL(self.output_channel[0], self.output_channel[0], num_iteration=5, kernel_size=3, pad=1),
             nn.MaxPool2d(2, 2),  # 64 x 8 x 25
@@ -44,7 +46,7 @@ class RCNN_FeatureExtractor(nn.Module):
             nn.MaxPool2d(2, (2, 1), (0, 1)),  # 128 x 4 x 26
             GRCL(self.output_channel[1], self.output_channel[2], num_iteration=5, kernel_size=3, pad=1),
             nn.MaxPool2d(2, (2, 1), (0, 1)),  # 256 x 2 x 27
-            nn.Conv2d(self.output_channel[2], self.output_channel[3], 2, 1, 0, bias=False),
+            nn.Conv2d(self.output_channel[2], self.output_channel[3], last_kernel, last_kernel, 0, bias=False),
             nn.BatchNorm2d(self.output_channel[3]), nn.ReLU(True))  # 512 x 1 x 26
 
     def forward(self, input):
@@ -54,9 +56,9 @@ class RCNN_FeatureExtractor(nn.Module):
 class ResNet_FeatureExtractor(nn.Module):
     """ FeatureExtractor of FAN (http://openaccess.thecvf.com/content_ICCV_2017/papers/Cheng_Focusing_Attention_Towards_ICCV_2017_paper.pdf) """
 
-    def __init__(self, input_channel, output_channel=512):
+    def __init__(self, input_channel, output_channel=512, **kwargs):
         super(ResNet_FeatureExtractor, self).__init__()
-        self.ConvNet = ResNet(input_channel, output_channel, BasicBlock, [1, 2, 5, 3])
+        self.ConvNet = ResNet(input_channel, output_channel, BasicBlock, [1, 2, 5, 3], **kwargs)
 
     def forward(self, input):
         return self.ConvNet(input)
@@ -152,8 +154,9 @@ class BasicBlock(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, input_channel, output_channel, block, layers):
+    def __init__(self, input_channel, output_channel, block, layers, **kwargs):
         super(ResNet, self).__init__()
+        last_kernel = int(kwargs.get('opt', None).imgH/16) if kwargs.get('opt', None) else 2
 
         self.output_channel_block = [int(output_channel / 4), int(output_channel / 2), output_channel, output_channel]
 
@@ -166,19 +169,19 @@ class ResNet(nn.Module):
         self.bn0_2 = nn.BatchNorm2d(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
 
-        self.maxpool1 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+        self.maxpool1 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0) # 32 -> 16
         self.layer1 = self._make_layer(block, self.output_channel_block[0], layers[0])
         self.conv1 = nn.Conv2d(self.output_channel_block[0], self.output_channel_block[
                                0], kernel_size=3, stride=1, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(self.output_channel_block[0])
 
-        self.maxpool2 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+        self.maxpool2 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0) # 16 -> 8
         self.layer2 = self._make_layer(block, self.output_channel_block[1], layers[1], stride=1)
         self.conv2 = nn.Conv2d(self.output_channel_block[1], self.output_channel_block[
                                1], kernel_size=3, stride=1, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(self.output_channel_block[1])
 
-        self.maxpool3 = nn.MaxPool2d(kernel_size=2, stride=(2, 1), padding=(0, 1))
+        self.maxpool3 = nn.MaxPool2d(kernel_size=2, stride=(2, 1), padding=(0, 1)) # 8 -> 4
         self.layer3 = self._make_layer(block, self.output_channel_block[2], layers[2], stride=1)
         self.conv3 = nn.Conv2d(self.output_channel_block[2], self.output_channel_block[
                                2], kernel_size=3, stride=1, padding=1, bias=False)
@@ -186,10 +189,10 @@ class ResNet(nn.Module):
 
         self.layer4 = self._make_layer(block, self.output_channel_block[3], layers[3], stride=1)
         self.conv4_1 = nn.Conv2d(self.output_channel_block[3], self.output_channel_block[
-                                 3], kernel_size=2, stride=(2, 1), padding=(0, 1), bias=False)
+                                 3], kernel_size=2, stride=(2, 1), padding=(0, 1), bias=False) # 4 -> 2
         self.bn4_1 = nn.BatchNorm2d(self.output_channel_block[3])
         self.conv4_2 = nn.Conv2d(self.output_channel_block[3], self.output_channel_block[
-                                 3], kernel_size=2, stride=1, padding=0, bias=False)
+                                 3], kernel_size=last_kernel, stride=(last_kernel, 1), padding=0, bias=False)  # 2 -> 1
         self.bn4_2 = nn.BatchNorm2d(self.output_channel_block[3])
 
     def _make_layer(self, block, planes, blocks, stride=1):
