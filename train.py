@@ -223,8 +223,7 @@ def train(opt):
 
         # save model
             torch.save(model.state_dict(), f'./saved_models/{opt.exp_name}/iter_{iteration+1}.pth')
-            wandb.log_artifact(f'./saved_models/{opt.exp_name}/iter_{iteration+1}.pth', 
-                                name='iter_{}_model'.format(iteration+1), type='model')
+            wandb.log_artifact(f'./saved_models/{opt.exp_name}/iter_{iteration+1}.pth', name=opt.wandb_run_id, type='model')
 
         if (iteration + 1) == opt.num_iter:
             print('end the training')
@@ -279,7 +278,10 @@ if __name__ == '__main__':
     parser.add_argument('--output_channel', type=int, default=512,
                         help='the number of output channel of Feature extractor')
     parser.add_argument('--hidden_size', type=int, default=256, help='the size of the LSTM hidden state')
-    parser.add_argument('--wandb_project_name', type=str, default='deep_text_recognition_benchmark', help='wandb api key')
+
+    parser.add_argument('--wandb_project_name', type=str, default='deep_text_recognition_benchmark', help='wandb project name')
+    parser.add_argument('--wandb_run_id', type=str, default='run{:06}'.format(random.randint(0,999999)))
+    parser.add_argument('--max_of_rgb', action='store_true', help='when converting rgb2gray, use max([r,g,b]) pixelwisely')
 
     opt = parser.parse_args()
 
