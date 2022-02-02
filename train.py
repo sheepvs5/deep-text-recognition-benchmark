@@ -132,6 +132,7 @@ def train(opt):
         opt_log += '---------------------------------------\n'
         print(opt_log)
         opt_file.write(opt_log)
+    wandb.config.update(opt)
 
     """ start training """
     start_iter = 0
