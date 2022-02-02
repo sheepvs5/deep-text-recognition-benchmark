@@ -5,6 +5,7 @@ import six
 import math
 import lmdb
 import torch
+import random
 
 from natsort import natsorted
 from PIL import Image
@@ -292,10 +293,11 @@ class NormalizePAD(object):
 
 class AlignCollate(object):
 
-    def __init__(self, imgH=32, imgW=100, keep_ratio_with_pad=False):
+    def __init__(self, imgH=32, imgW=100, keep_ratio_with_pad=False, random_resize_method=True):
         self.imgH = imgH
         self.imgW = imgW
         self.keep_ratio_with_pad = keep_ratio_with_pad
+        self.random_resize_method = random_resize_method
 
     def __call__(self, batch):
         batch = filter(lambda x: x is not None, batch)
@@ -315,7 +317,11 @@ class AlignCollate(object):
                 else:
                     resized_w = math.ceil(self.imgH * ratio)
 
-                resized_image = image.resize((resized_w, self.imgH), Image.BICUBIC)
+                if self.random_resize_method:
+                    resized_image = image.resize((resized_w, self.imgH), \
+                                    [Image.NEAREST, Image.BILINEAR, Image.BICUBIC][random.randint(0,2)])                
+                else:
+                    resized_image = image.resize((resized_w, self.imgH), Image.BICUBIC)
                 resized_images.append(transform(resized_image))
                 # resized_image.save('./image_test/%d_test.jpg' % w)
 
