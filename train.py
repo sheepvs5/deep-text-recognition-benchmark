@@ -223,9 +223,12 @@ def train(opt):
 
         # save model
             torch.save(model.state_dict(), f'./saved_models/{opt.exp_name}/last.pth')
-            wandb.log_artifact(f'./saved_models/{opt.exp_name}/last.pth', name=opt.wandb_run_id, type='model')
             torch.save(model, f'./saved_models/{opt.exp_name}/last.pt')
-            wandb.log_artifact(f'./saved_models/{opt.exp_name}/last.pt', name=opt.wandb_run_id, type='model')
+        # log artifact
+            artifact = wandb.Artifact(name=opt.wandb_run_id, type='model')
+            artifact.add_file(f'./saved_models/{opt.exp_name}/last.pth')
+            artifact.add_file(f'./saved_models/{opt.exp_name}/last.pt')            
+            wandb.log_artifact(artifact)
 
 
         if (iteration + 1) == opt.num_iter:
