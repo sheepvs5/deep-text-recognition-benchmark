@@ -222,8 +222,11 @@ def train(opt):
                 loss_avg.reset()
 
         # save model
-            torch.save(model.state_dict(), f'./saved_models/{opt.exp_name}/iter_{iteration+1}.pth')
-            wandb.log_artifact(f'./saved_models/{opt.exp_name}/iter_{iteration+1}.pth', name=opt.wandb_run_id, type='model')
+            torch.save(model.state_dict(), f'./saved_models/{opt.exp_name}/last.pth')
+            wandb.log_artifact(f'./saved_models/{opt.exp_name}/last.pth', name=opt.wandb_run_id, type='model')
+            torch.save(model, f'./saved_models/{opt.exp_name}/last.pt')
+            wandb.log_artifact(f'./saved_models/{opt.exp_name}/last.pt', name=opt.wandb_run_id, type='model')
+
 
         if (iteration + 1) == opt.num_iter:
             print('end the training')
