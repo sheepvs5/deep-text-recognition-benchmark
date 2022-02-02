@@ -195,7 +195,10 @@ class LmdbDataset(Dataset):
                 if self.opt.rgb:
                     img = Image.open(buf).convert('RGB')  # for color image
                 else:
-                    img = Image.open(buf).convert('L')
+                    if self.opt.max_of_rgb:
+                        img = Image.fromarray(np.max(Image.open(buf), axis=-1)).convert('L')
+                    else:
+                        img = Image.open(buf).convert('L')
 
             except IOError:
                 print(f'Corrupted image for {index}')
