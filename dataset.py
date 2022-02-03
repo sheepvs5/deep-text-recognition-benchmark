@@ -283,7 +283,8 @@ class NormalizePAD(object):
         img = self.toTensor(img)
         img.sub_(0.5).div_(0.5)
         c, h, w = img.size()
-        Pad_img = torch.FloatTensor(*self.max_size).fill_(0)
+        # Pad_img = torch.FloatTensor(*self.max_size).fill_(0)
+        Pad_img = torch.FloatTensor(*self.max_size).fill_(random.random()) # random fill
         Pad_img[:, :, :w] = img  # right pad
         if self.max_size[2] != w:  # add border Pad
             Pad_img[:, :, w:] = img[:, :, w - 1].unsqueeze(2).expand(c, h, self.max_size[2] - w)
