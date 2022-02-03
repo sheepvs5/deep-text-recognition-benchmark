@@ -36,7 +36,7 @@ def train(opt):
     train_dataset = Batch_Balanced_Dataset(opt)
 
     log = open(f'./saved_models/{opt.exp_name}/log_dataset.txt', 'a')
-    AlignCollate_valid = AlignCollate(imgH=opt.imgH, imgW=opt.imgW, keep_ratio_with_pad=opt.PAD)
+    AlignCollate_valid = AlignCollate(imgH=opt.imgH, imgW=opt.imgW, keep_ratio_with_pad=opt.PAD, resize_ratio=opt.resize_ratio)
     valid_dataset, valid_dataset_log = hierarchical_dataset(root=opt.valid_data, opt=opt)
     valid_loader = torch.utils.data.DataLoader(
         valid_dataset, batch_size=opt.batch_size,
@@ -289,6 +289,7 @@ if __name__ == '__main__':
     parser.add_argument('--wandb_project_name', type=str, default='deep_text_recognition_benchmark', help='wandb project name')
     parser.add_argument('--wandb_run_id', type=str, default='run{:06}'.format(random.randint(0,999999)))
     parser.add_argument('--max_of_rgb', action='store_true', help='when converting rgb2gray, use max([r,g,b]) pixelwisely')
+    parser.add_argument('--resize_ratio', type=float, default=1, help='width/height ratio when resizing')
 
     opt = parser.parse_args()
 

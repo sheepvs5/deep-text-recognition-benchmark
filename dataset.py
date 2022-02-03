@@ -31,7 +31,7 @@ class Batch_Balanced_Dataset(object):
         log.write(f'dataset_root: {opt.train_data}\nopt.select_data: {opt.select_data}\nopt.batch_ratio: {opt.batch_ratio}\n')
         assert len(opt.select_data) == len(opt.batch_ratio)
 
-        _AlignCollate = AlignCollate(imgH=opt.imgH, imgW=opt.imgW, keep_ratio_with_pad=opt.PAD)
+        _AlignCollate = AlignCollate(imgH=opt.imgH, imgW=opt.imgW, keep_ratio_with_pad=opt.PAD, resize_ratio=opt.resize_ratio)
         self.data_loader_list = []
         self.dataloader_iter_list = []
         batch_size_list = []
@@ -294,10 +294,11 @@ class NormalizePAD(object):
 
 class AlignCollate(object):
 
-    def __init__(self, imgH=32, imgW=100, keep_ratio_with_pad=False, random_resize_method=True):
+    def __init__(self, imgH=32, imgW=100, keep_ratio_with_pad=False, resize_ratio=1.0, random_resize_method=True):
         self.imgH = imgH
         self.imgW = imgW
         self.keep_ratio_with_pad = keep_ratio_with_pad
+        self.resize_ratio = resize_ratio
         self.random_resize_method = random_resize_method
 
     def __call__(self, batch):
@@ -312,7 +313,7 @@ class AlignCollate(object):
             resized_images = []
             for image in images:
                 w, h = image.size
-                ratio = w / float(h)
+                ratio = w / float(h) * self.resize_ratio
                 if math.ceil(self.imgH * ratio) > self.imgW:
                     resized_w = self.imgW
                 else:
