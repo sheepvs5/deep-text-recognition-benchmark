@@ -82,6 +82,52 @@ def createDataset(inputPath, gtFile, outputPath, checkValid=True):
     writeCache(env, cache)
     print('Created dataset with %d samples' % nSamples)
 
+def numpy2bytes(image):
+    success, encoded_image = cv2.imencode('.png', image)
+    return encoded_image.tobytes()
+
+def createDatasetFromList(imgs, labels, outputPath, checkValid=True):
+    """
+    Create LMDB dataset for training and evaluation.
+    ARGS:
+        imgs       : list of numpy arrays 
+        labels     : list of string labels
+        outputPath : LMDB output path
+        checkValid : if true, check the validity of every image
+    """
+    os.makedirs(outputPath, exist_ok=True)
+    env = lmdb.open(outputPath, map_size=1099511627776)
+    cache = {}
+    cnt = 1
+
+    nSamples = len(labels)
+    for i, (img, label) in enumerate(zip(imgs, labels)):
+        imageBin = numpy2bytes(img)
+        if checkValid:
+            try:
+                if not checkImageIsValid(imageBin):
+                    print('{}th image is not a valid image'.format(i))
+                    continue
+            except:
+                print('error occured', i)
+                with open(outputPath + '/error_image_log.txt', 'a') as log:
+                    log.write('%s-th image data occured error\n' % str(i))
+                continue
+
+        imageKey = 'image-%09d'.encode() % cnt
+        labelKey = 'label-%09d'.encode() % cnt
+        cache[imageKey] = imageBin
+        cache[labelKey] = label.encode()
+
+        if cnt % 1000 == 0:
+            writeCache(env, cache)
+            cache = {}
+            print('Written %d / %d' % (cnt, nSamples))
+        cnt += 1
+    nSamples = cnt-1
+    cache['num-samples'.encode()] = str(nSamples).encode()
+    writeCache(env, cache)
+    print('Created dataset with %d samples' % nSamples)
 
 if __name__ == '__main__':
     fire.Fire(createDataset)
