@@ -51,11 +51,11 @@ def train(opt):
     """ model configuration """
     if 'CTC' in opt.Prediction:
         if opt.baiduCTC:
-            converter = CTCLabelConverterForBaiduWarpctc(opt.character)
+            converter = CTCLabelConverterForBaiduWarpctc(opt.character, opt=opt)
         else:
-            converter = CTCLabelConverter(opt.character)
+            converter = CTCLabelConverter(opt.character, opt=opt)
     else:
-        converter = AttnLabelConverter(opt.character)
+        converter = AttnLabelConverter(opt.character, opt=opt)
     opt.num_class = len(converter.character)
 
     if opt.rgb:
@@ -290,6 +290,7 @@ if __name__ == '__main__':
     parser.add_argument('--wandb_run_id', type=str, default='run{:06}'.format(random.randint(0,999999)))
     parser.add_argument('--max_of_rgb', action='store_true', help='when converting rgb2gray, use max([r,g,b]) pixelwisely')
     parser.add_argument('--resize_ratio', type=float, default=1, help='width/height ratio when resizing')
+    parser.add_argument('--allow_last_space', action='store_true', help='Under training chars with space, offer both GT - sentence with/without space at the end of sentence.')
 
     opt = parser.parse_args()
 

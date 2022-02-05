@@ -190,9 +190,9 @@ def validation(model, criterion, evaluation_loader, converter, opt):
 def test(opt):
     """ model configuration """
     if 'CTC' in opt.Prediction:
-        converter = CTCLabelConverter(opt.character)
+        converter = CTCLabelConverter(opt.character, opt=opt)
     else:
-        converter = AttnLabelConverter(opt.character)
+        converter = AttnLabelConverter(opt.character, opt=opt)
     opt.num_class = len(converter.character)
 
     if opt.rgb:

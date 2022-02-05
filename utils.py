@@ -5,7 +5,8 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 class CTCLabelConverter(object):
     """ Convert between text-label and text-index """
 
-    def __init__(self, character):
+    def __init__(self, character, **kwargs):
+        self.opt = kwargs.get('opt', None)
         # character (str): set of the possible characters.
         dict_character = list(character)
 
@@ -34,6 +35,8 @@ class CTCLabelConverter(object):
             text = list(t)
             text = [self.dict[char] for char in text]
             batch_text[i][:len(text)] = torch.LongTensor(text)
+            if self.opt.allow_last_space and len(text)<batch_max_length:
+                batch_text[i][len(text)] = self.opt.character.find(' ')+1
         return (batch_text.to(device), torch.IntTensor(length).to(device))
 
     def decode(self, text_index, length):
@@ -55,7 +58,8 @@ class CTCLabelConverter(object):
 class CTCLabelConverterForBaiduWarpctc(object):
     """ Convert between text-label and text-index for baidu warpctc """
 
-    def __init__(self, character):
+    def __init__(self, character, **kwargs):
+        self.opt = kwargs.get('opt', None)
         # character (str): set of the possible characters.
         dict_character = list(character)
 
@@ -102,7 +106,8 @@ class CTCLabelConverterForBaiduWarpctc(object):
 class AttnLabelConverter(object):
     """ Convert between text-label and text-index """
 
-    def __init__(self, character):
+    def __init__(self, character, **kwargs):
+        self.opt = kwargs.get('opt', None)
         # character (str): set of the possible characters.
         # [GO] for the start token of the attention decoder. [s] for end-of-sentence token.
         list_token = ['[GO]', '[s]']  # ['[s]','[UNK]','[PAD]','[GO]']
