@@ -86,7 +86,7 @@ def numpy2bytes(image):
     success, encoded_image = cv2.imencode('.png', image)
     return encoded_image.tobytes()
 
-def createDatasetFromList(imgs, labels, outputPath, checkValid=True, map_size=1099511627776):
+def createDatasetFromList(imgs, labels, outputPath, checkValid=True, map_size=1099511627776, progress=False):
     """
     Create LMDB dataset for training and evaluation.
     ARGS:
@@ -122,7 +122,8 @@ def createDatasetFromList(imgs, labels, outputPath, checkValid=True, map_size=10
         if cnt % 1000 == 0:
             writeCache(env, cache)
             cache = {}
-            print('Written %d / %d' % (cnt, nSamples))
+            if progress:
+                print('Written %d / %d' % (cnt, nSamples))
         cnt += 1
     nSamples = cnt-1
     cache['num-samples'.encode()] = str(nSamples).encode()
