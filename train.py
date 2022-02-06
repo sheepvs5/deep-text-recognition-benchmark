@@ -224,11 +224,11 @@ def train(opt):
 
         # save model
             torch.save(model.state_dict(), f'./saved_models/{opt.exp_name}/last.pth')
-            torch.save(model, f'./saved_models/{opt.exp_name}/last.pt')
+            # torch.save(model, f'./saved_models/{opt.exp_name}/last.pt')
         # log artifact
             artifact = wandb.Artifact(name=opt.wandb_run_id, type='model')
             artifact.add_file(f'./saved_models/{opt.exp_name}/last.pth')
-            artifact.add_file(f'./saved_models/{opt.exp_name}/last.pt')            
+            # artifact.add_file(f'./saved_models/{opt.exp_name}/last.pt')
             wandb.log_artifact(artifact)
 
 
